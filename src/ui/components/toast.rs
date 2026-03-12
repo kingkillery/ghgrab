@@ -30,7 +30,7 @@ impl Toast {
             message,
             toast_type,
             created_at: Instant::now(),
-            duration_secs: 4, 
+            duration_secs: 4,
         }
     }
 
@@ -46,19 +46,19 @@ pub fn render(f: &mut Frame, area: Rect, toast: &Toast) {
     let col_constraints = [
         Constraint::Min(0),
         Constraint::Length(toast_width),
-        Constraint::Length(2), 
+        Constraint::Length(2),
     ];
     let row_constraints = [
         Constraint::Min(0),
         Constraint::Length(toast_height),
-        Constraint::Length(1), 
+        Constraint::Length(1),
     ];
 
     let rects_cols = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(col_constraints)
         .split(area);
-    
+
     let rects_rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints(row_constraints)
@@ -75,7 +75,10 @@ pub fn render(f: &mut Frame, area: Rect, toast: &Toast) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(color))
-        .title(Span::styled(format!(" {} {} ", icon, title), Style::default().fg(color).add_modifier(Modifier::BOLD)))
+        .title(Span::styled(
+            format!(" {} {} ", icon, title),
+            Style::default().fg(color).add_modifier(Modifier::BOLD),
+        ))
         .style(Style::default().bg(BG_COLOR));
 
     let text = Paragraph::new(toast.message.as_str())

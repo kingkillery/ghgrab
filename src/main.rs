@@ -5,7 +5,6 @@ mod ui;
 use anyhow::Result;
 use clap::Parser;
 
-
 #[derive(Parser)]
 #[command(name = "ghgrab", version, about)]
 struct Cli {

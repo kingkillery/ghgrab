@@ -1,7 +1,7 @@
+use crate::github::{GitHubClient, RepoItem};
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::PathBuf;
-use crate::github::{GitHubClient, RepoItem};
 
 pub struct Downloader {
     client: GitHubClient,
@@ -20,11 +20,11 @@ impl Downloader {
     pub async fn download_items(
         &self,
         items: &[RepoItem],
-        _repo_path: &str, 
+        _repo_path: &str,
         progress_callback: impl Fn(String) + Send + Sync + 'static,
     ) -> Result<Vec<String>> {
         let mut errors = Vec::new();
-        
+
         for item in items {
             if !item.selected {
                 continue;
@@ -33,9 +33,11 @@ impl Downloader {
             let dest_path = self.base_path.join(&item.name);
 
             let result = if item.is_file() {
-                self.download_file(item, dest_path, &progress_callback).await
+                self.download_file(item, dest_path, &progress_callback)
+                    .await
             } else {
-                self.download_folder(item, dest_path, &progress_callback).await
+                self.download_folder(item, dest_path, &progress_callback)
+                    .await
             };
 
             if let Err(e) = result {
@@ -61,7 +63,7 @@ impl Downloader {
         let response = reqwest::get(download_url)
             .await
             .context("Failed to download file")?;
-        
+
         let content = response
             .bytes()
             .await
@@ -71,8 +73,7 @@ impl Downloader {
             fs::create_dir_all(parent)?;
         }
 
-        fs::write(&dest_path, content)
-            .context(format!("Failed to write file: {:?}", dest_path))?;
+        fs::write(&dest_path, content).context(format!("Failed to write file: {:?}", dest_path))?;
 
         Ok(())
     }
@@ -85,17 +86,19 @@ impl Downloader {
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<()>> + Send + 'a>> {
         Box::pin(async move {
             progress_callback(format!("Scanning folder: {}", item.name));
-            
+
             fs::create_dir_all(&dest_path)?;
             let contents = self.client.fetch_contents(&item.url).await?;
 
             for sub_item in contents {
                 let sub_dest_path = dest_path.join(&sub_item.name);
-                
+
                 if sub_item.is_file() {
-                    self.download_file(&sub_item, sub_dest_path, progress_callback).await?;
+                    self.download_file(&sub_item, sub_dest_path, progress_callback)
+                        .await?;
                 } else {
-                    self.download_folder(&sub_item, sub_dest_path, progress_callback).await?;
+                    self.download_folder(&sub_item, sub_dest_path, progress_callback)
+                        .await?;
                 }
             }
             Ok(())

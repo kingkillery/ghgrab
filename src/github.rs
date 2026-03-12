@@ -13,7 +13,7 @@ pub struct GitHubUrl {
 impl GitHubUrl {
     pub fn parse(url_str: &str) -> Result<Self> {
         let url = Url::parse(url_str).context("Invalid URL format")?;
-        
+
         if url.host_str() != Some("github.com") {
             return Err(anyhow!("Not a GitHub URL"));
         }
@@ -74,7 +74,7 @@ pub struct RepoItem {
     pub download_url: Option<String>,
     pub url: String,
     #[allow(dead_code)]
-    pub size: Option<u64>, 
+    pub size: Option<u64>,
     #[serde(skip)]
     pub selected: bool,
     #[serde(skip)]
@@ -103,7 +103,9 @@ impl RepoItem {
     }
 
     pub fn actual_download_url(&self) -> Option<&String> {
-        self.lfs_download_url.as_ref().or(self.download_url.as_ref())
+        self.lfs_download_url
+            .as_ref()
+            .or(self.download_url.as_ref())
     }
 }
 
@@ -123,7 +125,7 @@ impl LfsPointer {
         let mut size = None;
 
         for line in content.lines() {
-            if line.starts_with("oid sha256:") {    
+            if line.starts_with("oid sha256:") {
                 oid = Some(line.trim_start_matches("oid sha256:").to_string());
             } else if line.starts_with("size ") {
                 size = line.trim_start_matches("size ").parse().ok();
@@ -215,7 +217,7 @@ impl GitHubClient {
         Ok(items)
     }
 
-    // Fetch raw content 
+    // Fetch raw content
     pub async fn fetch_raw_content(&self, url: &str) -> Result<String> {
         let response = self
             .client
@@ -232,9 +234,18 @@ impl GitHubClient {
         Ok(content)
     }
 
-    // Call LFS batch API 
-    pub async fn get_lfs_download_url(&self, owner: &str, repo: &str, oid: &str, size: u64) -> Result<String> {
-        let batch_url = format!("https://github.com/{}/{}.git/info/lfs/objects/batch", owner, repo);
+    // Call LFS batch API
+    pub async fn get_lfs_download_url(
+        &self,
+        owner: &str,
+        repo: &str,
+        oid: &str,
+        size: u64,
+    ) -> Result<String> {
+        let batch_url = format!(
+            "https://github.com/{}/{}.git/info/lfs/objects/batch",
+            owner, repo
+        );
 
         let request = LfsBatchRequest {
             operation: "download".to_string(),
@@ -259,7 +270,10 @@ impl GitHubClient {
             return Err(anyhow!("LFS batch API error: {}", response.status()));
         }
 
-        let batch_response: LfsBatchResponse = response.json().await.context("Failed to parse LFS response")?;
+        let batch_response: LfsBatchResponse = response
+            .json()
+            .await
+            .context("Failed to parse LFS response")?;
 
         batch_response
             .objects
@@ -271,7 +285,13 @@ impl GitHubClient {
             .ok_or_else(|| anyhow!("No download URL in LFS response"))
     }
 
-    pub async fn resolve_lfs_files(&self, items: &mut [RepoItem], owner: &str, repo: &str, branch: &str) {
+    pub async fn resolve_lfs_files(
+        &self,
+        items: &mut [RepoItem],
+        owner: &str,
+        repo: &str,
+        branch: &str,
+    ) {
         for item in items.iter_mut() {
             if item.is_file() {
                 if let Some(size) = item.size {
@@ -282,7 +302,15 @@ impl GitHubClient {
                                     item.lfs_oid = Some(pointer.oid.clone());
                                     item.lfs_size = Some(pointer.size);
 
-                                    if let Ok(lfs_url) = self.get_lfs_download_url(owner, repo, &pointer.oid, pointer.size).await {
+                                    if let Ok(lfs_url) = self
+                                        .get_lfs_download_url(
+                                            owner,
+                                            repo,
+                                            &pointer.oid,
+                                            pointer.size,
+                                        )
+                                        .await
+                                    {
                                         item.lfs_download_url = Some(lfs_url);
                                     } else {
                                         let media_url = format!(
@@ -408,7 +436,8 @@ mod tests {
 
     #[test]
     fn test_lfs_pointer_parse_valid() {
-        let content = "version https://git-lfs.github.com/spec/v1\noid sha256:abc123def456\nsize 12345";
+        let content =
+            "version https://git-lfs.github.com/spec/v1\noid sha256:abc123def456\nsize 12345";
         let pointer = LfsPointer::parse(content).unwrap();
         assert_eq!(pointer.oid, "abc123def456");
         assert_eq!(pointer.size, 12345);
@@ -468,7 +497,10 @@ mod tests {
         let item = make_test_item("file");
         assert!(!item.is_lfs());
         assert_eq!(item.actual_size(), Some(1024));
-        assert_eq!(item.actual_download_url().map(|s| s.as_str()), Some("https://example.com/test.rs"));
+        assert_eq!(
+            item.actual_download_url().map(|s| s.as_str()),
+            Some("https://example.com/test.rs")
+        );
     }
 
     #[test]
@@ -480,6 +512,9 @@ mod tests {
 
         assert!(item.is_lfs());
         assert_eq!(item.actual_size(), Some(999999));
-        assert_eq!(item.actual_download_url().map(|s| s.as_str()), Some("https://lfs.example.com/abc123"));
+        assert_eq!(
+            item.actual_download_url().map(|s| s.as_str()),
+            Some("https://lfs.example.com/abc123")
+        );
     }
 }

@@ -25,20 +25,20 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
         Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3),  // Breadcrumb
-                Constraint::Min(10),    // File list
-                Constraint::Length(2),  // Download status
-                Constraint::Length(2),  
+                Constraint::Length(3), // Breadcrumb
+                Constraint::Min(10),   // File list
+                Constraint::Length(2), // Download status
+                Constraint::Length(2),
             ])
             .split(area)
     } else {
         Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(3),  // Breadcrumb
-                Constraint::Min(10),    // File list
-                Constraint::Length(1),  // Spacer
-                Constraint::Length(2),  
+                Constraint::Length(3), // Breadcrumb
+                Constraint::Min(10),   // File list
+                Constraint::Length(1), // Spacer
+                Constraint::Length(2),
             ])
             .split(area)
     };
@@ -52,7 +52,7 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
     let header = Paragraph::new(breadcrumb_text)
         .block(
             Block::default()
-                .borders(Borders::ALL)  
+                .borders(Borders::ALL)
                 .title(" Repository ")
                 .border_style(Style::default().fg(ACCENT_COLOR))
                 .style(Style::default().bg(BG_COLOR)),
@@ -77,25 +77,37 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
             "DIR".to_string()
         } else {
             name.rsplit('.')
-            .next()
-            .filter(|ext| !ext.is_empty() && ext.len() <= 5)
-            .map(|ext| ext.to_uppercase())
-            .unwrap_or_else(|| "FILE".to_string())
+                .next()
+                .filter(|ext| !ext.is_empty() && ext.len() <= 5)
+                .map(|ext| ext.to_uppercase())
+                .unwrap_or_else(|| "FILE".to_string())
         }
     }
 
     let header_line = Line::from(vec![
         Span::styled("    ", Style::default().bg(BORDER_COLOR)),
-        Span::styled(format!("{:<41}", "Name"), Style::default().fg(FG_COLOR).add_modifier(Modifier::BOLD).bg(BORDER_COLOR)),
+        Span::styled(
+            format!("{:<41}", "Name"),
+            Style::default()
+                .fg(FG_COLOR)
+                .add_modifier(Modifier::BOLD)
+                .bg(BORDER_COLOR),
+        ),
         Span::styled("  ", Style::default().bg(BORDER_COLOR)),
-        Span::styled(format!("{:<8}", "Type"), Style::default().fg(FG_COLOR).add_modifier(Modifier::BOLD).bg(BORDER_COLOR)),
+        Span::styled(
+            format!("{:<8}", "Type"),
+            Style::default()
+                .fg(FG_COLOR)
+                .add_modifier(Modifier::BOLD)
+                .bg(BORDER_COLOR),
+        ),
         Span::styled("  ", Style::default().bg(BORDER_COLOR)),
         Span::styled("  ", Style::default().bg(BORDER_COLOR)),
     ]);
     let header_item = ListItem::new(header_line).style(Style::default().bg(BORDER_COLOR));
 
     let mut all_items = vec![header_item];
-    
+
     let file_items: Vec<ListItem> = state
         .items
         .iter()
@@ -103,23 +115,30 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
         .skip(state.scroll_offset)
         .map(|(idx, item)| {
             let is_selected = idx == state.cursor;
-            
+
             let icon = if state.ascii_mode {
-                if item.is_dir() { "[D] " } else { "[F] " }
+                if item.is_dir() {
+                    "[D] "
+                } else {
+                    "[F] "
+                }
             } else if item.is_dir() {
                 "📁 "
             } else {
                 "📄 "
             };
 
-            let mark = if item.selected { 
+            let mark = if item.selected {
                 Span::styled("[●] ", Style::default().fg(SUCCESS_COLOR))
-            } else { 
-                Span::styled("[ ] ", Style::default().fg(BORDER_COLOR)) 
+            } else {
+                Span::styled("[ ] ", Style::default().fg(BORDER_COLOR))
             };
-            
+
             let name_style = if is_selected {
-                Style::default().fg(ACCENT_COLOR).add_modifier(Modifier::BOLD).bg(HIGHLIGHT_BG)
+                Style::default()
+                    .fg(ACCENT_COLOR)
+                    .add_modifier(Modifier::BOLD)
+                    .bg(HIGHLIGHT_BG)
             } else if item.is_dir() {
                 Style::default().fg(FOLDER_COLOR)
             } else {
@@ -127,7 +146,7 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
             };
 
             let file_type = get_file_type(&item.name, item.is_dir());
-            
+
             let size_display = if !item.is_dir() {
                 item.actual_size()
                     .map(|s| format!("{:>12}", format_size(s)))
@@ -154,16 +173,19 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
 
             let name_with_icon = format!("{}{}", icon, display_name);
             let name_display = format!("{:<40}", name_with_icon);
-            
+
             let content = Line::from(vec![
                 mark,
                 Span::styled(name_display, name_style),
                 Span::styled("  ", Style::default()),
-                Span::styled(format!("{:<8}", file_type), Style::default().fg(WARNING_COLOR)),
+                Span::styled(
+                    format!("{:<8}", file_type),
+                    Style::default().fg(WARNING_COLOR),
+                ),
                 Span::styled("  ", Style::default()),
                 Span::styled(size_display, Style::default().fg(BORDER_COLOR)),
             ]);
-            
+
             let item = ListItem::new(content);
             if is_selected {
                 item.style(Style::default().bg(HIGHLIGHT_BG))
@@ -179,24 +201,38 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
         Block::default()
             .borders(Borders::ALL)
             .title(format!(" Files ({}) ", state.items.len()))
-            .border_style(Style::default().fg(if state.is_downloading { WARNING_COLOR } else { BORDER_COLOR }))
+            .border_style(Style::default().fg(if state.is_downloading {
+                WARNING_COLOR
+            } else {
+                BORDER_COLOR
+            }))
             .style(Style::default().bg(BG_COLOR)),
     );
     f.render_widget(list, chunks[1]);
-    
 
-    // Download Status Section 
+    // Download Status Section
     if state.is_downloading {
         let status_text = if state.status_msg.is_empty() {
             "Starting download...".to_string()
         } else {
             state.status_msg.to_string()
         };
-        
+
         let status = Paragraph::new(Line::from(vec![
-            Span::styled(" ⬇ ", Style::default().fg(BG_COLOR).bg(SUCCESS_COLOR).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                " ⬇ ",
+                Style::default()
+                    .fg(BG_COLOR)
+                    .bg(SUCCESS_COLOR)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::styled(" ", Style::default()),
-            Span::styled(status_text, Style::default().fg(WARNING_COLOR).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                status_text,
+                Style::default()
+                    .fg(WARNING_COLOR)
+                    .add_modifier(Modifier::BOLD),
+            ),
         ]))
         .style(Style::default().bg(BG_COLOR));
         f.render_widget(status, chunks[2]);
@@ -204,30 +240,75 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
 
     let help_spans = vec![
         Span::styled("  ", Style::default()),
-        Span::styled("j/k", Style::default().fg(ACCENT_COLOR).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "j/k",
+            Style::default()
+                .fg(ACCENT_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" Nav", Style::default().fg(BORDER_COLOR)),
         Span::styled("  │  ", Style::default().fg(BORDER_COLOR)),
-        Span::styled("Enter", Style::default().fg(SUCCESS_COLOR).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "Enter",
+            Style::default()
+                .fg(SUCCESS_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" Open", Style::default().fg(BORDER_COLOR)),
         Span::styled("  │  ", Style::default().fg(BORDER_COLOR)),
-        Span::styled("Space", Style::default().fg(WARNING_COLOR).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "Space",
+            Style::default()
+                .fg(WARNING_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" Select", Style::default().fg(BORDER_COLOR)),
         Span::styled("  │  ", Style::default().fg(BORDER_COLOR)),
-        Span::styled("a", Style::default().fg(FOLDER_COLOR).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "a",
+            Style::default()
+                .fg(FOLDER_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled("/", Style::default().fg(BORDER_COLOR)),
-        Span::styled("u", Style::default().fg(FOLDER_COLOR).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "u",
+            Style::default()
+                .fg(FOLDER_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" All/None", Style::default().fg(BORDER_COLOR)),
         Span::styled("  │  ", Style::default().fg(BORDER_COLOR)),
-        Span::styled("d", Style::default().fg(SUCCESS_COLOR).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "d",
+            Style::default()
+                .fg(SUCCESS_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" Download", Style::default().fg(BORDER_COLOR)),
         Span::styled("  │  ", Style::default().fg(BORDER_COLOR)),
-        Span::styled("i", Style::default().fg(ACCENT_COLOR).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "i",
+            Style::default()
+                .fg(ACCENT_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" Icons", Style::default().fg(BORDER_COLOR)),
         Span::styled("  │  ", Style::default().fg(BORDER_COLOR)),
-        Span::styled("←", Style::default().fg(ERROR_COLOR).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "←",
+            Style::default()
+                .fg(ERROR_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" Back", Style::default().fg(BORDER_COLOR)),
         Span::styled("  │  ", Style::default().fg(BORDER_COLOR)),
-        Span::styled("q", Style::default().fg(ERROR_COLOR).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "q",
+            Style::default()
+                .fg(ERROR_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" Quit", Style::default().fg(BORDER_COLOR)),
         Span::styled("  ", Style::default()),
     ];

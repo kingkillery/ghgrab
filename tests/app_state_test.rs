@@ -1,11 +1,15 @@
-use ghgrab::ui::AppState;
 use ghgrab::github::RepoItem;
+use ghgrab::ui::AppState;
 
 fn make_items(count: usize) -> Vec<RepoItem> {
     (0..count)
         .map(|i| RepoItem {
             name: format!("item_{}", i),
-            item_type: if i % 3 == 0 { "dir".to_string() } else { "file".to_string() },
+            item_type: if i % 3 == 0 {
+                "dir".to_string()
+            } else {
+                "file".to_string()
+            },
             path: format!("path/item_{}", i),
             download_url: Some(format!("https://example.com/item_{}", i)),
             url: format!("https://api.github.com/repos/o/r/contents/item_{}", i),
