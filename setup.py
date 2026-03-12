@@ -16,7 +16,7 @@ class PostInstallCommand(install):
         
         if system == "windows":
             platform_name = "win32"
-            binary_name = "ghg  rab.exe"
+            binary_name = "ghgrab.exe"
         elif system == "darwin":
             arch = platform.machine()
             platform_name = "darwin-arm64" if arch == "arm64" else "darwin"
@@ -35,7 +35,8 @@ class PostInstallCommand(install):
         try:
             print(f"Downloading ghgrab binary for {platform_name}...")
             urllib.request.urlretrieve(url, bin_path)
-            os.chmod(bin_path, 0o755)
+            if system != "windows":
+                os.chmod(bin_path, 0o755)
             print("Binary downloaded successfully!")
         except Exception as e:
             print(f"Failed to download binary: {e}")

@@ -106,8 +106,10 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
             
             let icon = if state.ascii_mode {
                 if item.is_dir() { "[D] " } else { "[F] " }
+            } else if item.is_dir() {
+                "📁 "
             } else {
-                if item.is_dir() { "📁 " } else { "📄 " }
+                "📄 "
             };
 
             let mark = if item.selected { 
@@ -155,7 +157,7 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
             
             let content = Line::from(vec![
                 mark,
-                Span::styled(name_display, name_style.clone()),
+                Span::styled(name_display, name_style),
                 Span::styled("  ", Style::default()),
                 Span::styled(format!("{:<8}", file_type), Style::default().fg(WARNING_COLOR)),
                 Span::styled("  ", Style::default()),

@@ -3,17 +3,18 @@ mod github;
 mod ui;
 
 use anyhow::Result;
-use std::env;
+use clap::Parser;
+
+
+#[derive(Parser)]
+#[command(name = "ghgrab", version, about)]
+struct Cli {
+    url: Option<String>,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args: Vec<String> = env::args().collect();
-    let initial_url = if args.len() > 1 {
-        Some(args[1].clone())
-    } else {
-        None
-    };
-    
-    ui::run_tui(initial_url).await?;
+    let cli = Cli::parse();
+    ui::run_tui(cli.url).await?;
     Ok(())
 }

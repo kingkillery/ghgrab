@@ -30,7 +30,9 @@ impl GitHubUrl {
         let owner = path_segments[0].to_string();
         let repo = path_segments[1].to_string();
 
-        let (branch, path) = if path_segments.len() >= 4 && path_segments[2] == "tree" {
+        let (branch, path) = if path_segments.len() >= 4
+            && (path_segments[2] == "tree" || path_segments[2] == "blob")
+        {
             let branch = path_segments[3].to_string();
             let path = if path_segments.len() > 4 {
                 path_segments[4..].join("/")
@@ -269,7 +271,7 @@ impl GitHubClient {
             .ok_or_else(|| anyhow!("No download URL in LFS response"))
     }
 
-    pub async fn resolve_lfs_files(&self, items: &mut Vec<RepoItem>, owner: &str, repo: &str) {
+    pub async fn resolve_lfs_files(&self, items: &mut [RepoItem], owner: &str, repo: &str, branch: &str) {
         for item in items.iter_mut() {
             if item.is_file() {
                 if let Some(size) = item.size {
@@ -284,8 +286,8 @@ impl GitHubClient {
                                         item.lfs_download_url = Some(lfs_url);
                                     } else {
                                         let media_url = format!(
-                                            "https://media.githubusercontent.com/media/{}/{}/master/{}",
-                                            owner, repo, item.path
+                                            "https://media.githubusercontent.com/media/{}/{}/{}/{}",
+                                            owner, repo, branch, item.path
                                         );
                                         item.lfs_download_url = Some(media_url);
                                     }
@@ -302,6 +304,8 @@ impl GitHubClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // --- GitHubUrl parsing tests ---
 
     #[test]
     fn test_parse_github_url() {
@@ -321,5 +325,161 @@ mod tests {
         assert_eq!(parsed.repo, "rust");
         assert_eq!(parsed.branch, "main");
         assert_eq!(parsed.path, "");
+    }
+
+    #[test]
+    fn test_parse_blob_url() {
+        let url = "https://github.com/owner/repo/blob/main/src/lib.rs";
+        let parsed = GitHubUrl::parse(url).unwrap();
+        assert_eq!(parsed.owner, "owner");
+        assert_eq!(parsed.repo, "repo");
+        assert_eq!(parsed.branch, "main");
+        assert_eq!(parsed.path, "src/lib.rs");
+    }
+
+    #[test]
+    fn test_parse_branch_only_url() {
+        let url = "https://github.com/owner/repo/tree/develop";
+        let parsed = GitHubUrl::parse(url).unwrap();
+        assert_eq!(parsed.owner, "owner");
+        assert_eq!(parsed.repo, "repo");
+        assert_eq!(parsed.branch, "develop");
+        assert_eq!(parsed.path, "");
+    }
+
+    #[test]
+    fn test_parse_deep_path() {
+        let url = "https://github.com/org/project/tree/v2.0/src/core/engine";
+        let parsed = GitHubUrl::parse(url).unwrap();
+        assert_eq!(parsed.owner, "org");
+        assert_eq!(parsed.repo, "project");
+        assert_eq!(parsed.branch, "v2.0");
+        assert_eq!(parsed.path, "src/core/engine");
+    }
+
+    #[test]
+    fn test_parse_invalid_non_github_url() {
+        let url = "https://gitlab.com/user/repo";
+        assert!(GitHubUrl::parse(url).is_err());
+    }
+
+    #[test]
+    fn test_parse_invalid_not_a_url() {
+        assert!(GitHubUrl::parse("not a url").is_err());
+    }
+
+    #[test]
+    fn test_parse_invalid_no_repo() {
+        let url = "https://github.com/owner";
+        assert!(GitHubUrl::parse(url).is_err());
+    }
+
+    // --- api_url tests ---
+
+    #[test]
+    fn test_api_url_with_path() {
+        let gh = GitHubUrl {
+            owner: "owner".into(),
+            repo: "repo".into(),
+            branch: "main".into(),
+            path: "src/lib.rs".into(),
+        };
+        assert_eq!(
+            gh.api_url(),
+            "https://api.github.com/repos/owner/repo/contents/src/lib.rs?ref=main"
+        );
+    }
+
+    #[test]
+    fn test_api_url_without_path() {
+        let gh = GitHubUrl {
+            owner: "owner".into(),
+            repo: "repo".into(),
+            branch: "main".into(),
+            path: String::new(),
+        };
+        assert_eq!(
+            gh.api_url(),
+            "https://api.github.com/repos/owner/repo/contents?ref=main"
+        );
+    }
+
+    // --- LfsPointer tests ---
+
+    #[test]
+    fn test_lfs_pointer_parse_valid() {
+        let content = "version https://git-lfs.github.com/spec/v1\noid sha256:abc123def456\nsize 12345";
+        let pointer = LfsPointer::parse(content).unwrap();
+        assert_eq!(pointer.oid, "abc123def456");
+        assert_eq!(pointer.size, 12345);
+    }
+
+    #[test]
+    fn test_lfs_pointer_parse_not_lfs() {
+        let content = "This is just a regular file content";
+        assert!(LfsPointer::parse(content).is_none());
+    }
+
+    #[test]
+    fn test_lfs_pointer_parse_missing_oid() {
+        let content = "version https://git-lfs.github.com/spec/v1\nsize 12345";
+        assert!(LfsPointer::parse(content).is_none());
+    }
+
+    #[test]
+    fn test_lfs_pointer_parse_missing_size() {
+        let content = "version https://git-lfs.github.com/spec/v1\noid sha256:abc123";
+        assert!(LfsPointer::parse(content).is_none());
+    }
+
+    // --- RepoItem tests ---
+
+    fn make_test_item(item_type: &str) -> RepoItem {
+        RepoItem {
+            name: "test.rs".to_string(),
+            item_type: item_type.to_string(),
+            path: "src/test.rs".to_string(),
+            download_url: Some("https://example.com/test.rs".to_string()),
+            url: "https://api.github.com/repos/o/r/contents/src/test.rs".to_string(),
+            size: Some(1024),
+            selected: false,
+            lfs_oid: None,
+            lfs_size: None,
+            lfs_download_url: None,
+        }
+    }
+
+    #[test]
+    fn test_repo_item_is_dir() {
+        let item = make_test_item("dir");
+        assert!(item.is_dir());
+        assert!(!item.is_file());
+    }
+
+    #[test]
+    fn test_repo_item_is_file() {
+        let item = make_test_item("file");
+        assert!(item.is_file());
+        assert!(!item.is_dir());
+    }
+
+    #[test]
+    fn test_repo_item_not_lfs() {
+        let item = make_test_item("file");
+        assert!(!item.is_lfs());
+        assert_eq!(item.actual_size(), Some(1024));
+        assert_eq!(item.actual_download_url().map(|s| s.as_str()), Some("https://example.com/test.rs"));
+    }
+
+    #[test]
+    fn test_repo_item_lfs() {
+        let mut item = make_test_item("file");
+        item.lfs_oid = Some("abc123".to_string());
+        item.lfs_size = Some(999999);
+        item.lfs_download_url = Some("https://lfs.example.com/abc123".to_string());
+
+        assert!(item.is_lfs());
+        assert_eq!(item.actual_size(), Some(999999));
+        assert_eq!(item.actual_download_url().map(|s| s.as_str()), Some("https://lfs.example.com/abc123"));
     }
 }
