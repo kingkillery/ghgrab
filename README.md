@@ -1,12 +1,12 @@
-# ghgrab - grab anything you want
+# ghgrab - "grab anything you want"
 
-Ever found a single file or folder in a massive GitHub repo and wished you could just *grab it* without cloning the whole thing? That's exactly why **ghgrab** exists. 
+> A simple, pretty terminal tool that lets you search and download files from GitHub without leaving your CLI.
 
-It's a simple, pretty terminal tool that lets you pick what you need and download it instantly. No clutter, no `git clone` waiting times, just the stuff you want.
+![Rust](https://img.shields.io/badge/rust-1.70%20%7C%201.75%20%7C%20stable-blue) ![crates.io](https://img.shields.io/crates/v/ghgrab.svg?color=blue) ![npm version](https://img.shields.io/npm/v/@ghgrab/ghgrab.svg?color=blue) ![PyPI version](https://img.shields.io/pypi/v/ghgrab.svg?color=blue) ![license](https://img.shields.io/badge/license-MIT-blue)
 
 ![ghgrab demo](assets/ghgrab.gif)
 
----
+**ghgrab** provides a streamlined command-line interface for cherry-picking specific files or folders from any GitHub repository, powered by the Rust `tokio` and `ratatui` ecosystem. Focused on speed and ease of use, it offers a beautiful TUI that lets you grab exactly what you need; all without the wait times of a full `git clone`.
 
 ## Why use ghgrab?
 
