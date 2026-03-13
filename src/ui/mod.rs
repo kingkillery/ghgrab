@@ -267,7 +267,7 @@ async fn handle_input(
 ) -> Result<bool> {
     let mut s = state.lock().await;
 
-    if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
+    if (key.code == KeyCode::Char('q') || key.code == KeyCode::Char('c')) && key.modifiers.contains(KeyModifiers::CONTROL) {
         return Ok(true);
     }
 
@@ -311,6 +311,10 @@ async fn handle_input(
         AppMode::Browse => {
             match key.code {
                 KeyCode::Char('q') | KeyCode::Char('Q') => return Ok(true),
+                KeyCode::Esc => {
+                    s.mode = AppMode::Input;
+                    return Ok(false);
+                }
                 KeyCode::Char('i') => {
                     s.ascii_mode = !s.ascii_mode;
                     let msg = if s.ascii_mode {

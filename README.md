@@ -74,16 +74,17 @@ We've kept it pretty standard, but here's a quick cheat sheet:
 | Key | Action |
 |-----|--------|
 | `Enter` / `l` / `Right` | Enter directory or Submit URL |
-| `Backspace` / `h` / `Left` | Go back to previous folder or Input screen |
+| `Backspace` / `h` / `Left` | Go back to previous folder |
+| `Esc` | **Return Home** (file list) or **Quit** (home screen) |
+| `q` / `Q` | **Quit** (from file list) |
+| `Ctrl+q` | **Force Quit** (anywhere) |
 | `Space` | Toggle selection for the current item |
 | `a` | Select All items |
 | `u` | Unselect all items |
 | `d` / `D` | Download selected items |
 | `i` | Toggle Icons (Emoji / ASCII) |
-| `q` / `Q` | Exit application |
 | `g` / `Home` | Jump to Top |
 | `G` / `End` | Jump to Bottom |
-| `Esc` | Clear input or Cancel search |
 
 ---
 

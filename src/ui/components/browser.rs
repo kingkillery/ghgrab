@@ -304,6 +304,14 @@ pub fn render(f: &mut Frame, area: Rect, state: &BrowserState) {
         Span::styled(" Back", Style::default().fg(BORDER_COLOR)),
         Span::styled("  │  ", Style::default().fg(BORDER_COLOR)),
         Span::styled(
+            "Esc",
+            Style::default()
+                .fg(ACCENT_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(" Home", Style::default().fg(BORDER_COLOR)),
+        Span::styled("  │  ", Style::default().fg(BORDER_COLOR)),
+        Span::styled(
             "q",
             Style::default()
                 .fg(ERROR_COLOR)
