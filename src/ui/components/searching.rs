@@ -74,7 +74,6 @@ pub fn render(f: &mut Frame, area: Rect, frame_count: u64, status_msg: &str) {
         .style(Style::default().bg(BG_COLOR));
     f.render_widget(header, header_area[1]);
 
-
     let msg = if status_msg.is_empty() {
         "Searching Repository..."
     } else {

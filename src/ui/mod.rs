@@ -138,19 +138,19 @@ pub async fn run_tui(initial_url: Option<String>) -> Result<()> {
     let client = GitHubClient::new()?;
     let mut state_init = AppState::new();
     let has_initial_url = initial_url.is_some();
-    
+
     if let Some(url) = initial_url {
         state_init.url_input = url;
         state_init.mode = AppMode::Searching;
         state_init.status_message = "Parsing URL...".to_string();
     }
-    
+
     let state = Arc::new(Mutex::new(state_init));
 
     if has_initial_url {
         let state_c = state.clone();
         let client_c = client.clone();
-        
+
         tokio::spawn(async move {
             let url = {
                 let s = state_c.lock().await;
@@ -256,7 +256,6 @@ async fn event_loop(
     state: Arc<Mutex<AppState>>,
     client: GitHubClient,
 ) -> Result<()> {
-
     loop {
         {
             let mut state_lock = state.lock().await;
@@ -342,120 +341,116 @@ async fn handle_input(
     }
 
     match s.mode {
-        AppMode::Input => {
-            match key.code {
-                KeyCode::Char('v') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    
-                }
-                KeyCode::Char(c) => s.url_input.push(c),
-                KeyCode::Backspace => {
-                    s.url_input.pop();
-                }
-                KeyCode::Esc => return Ok(true),
-                KeyCode::Enter => {
-                    let url = s.url_input.clone();
-                    s.mode = AppMode::Searching;
-                    s.status_message = "Parsing URL...".to_string();
+        AppMode::Input => match key.code {
+            KeyCode::Char('v') if key.modifiers.contains(KeyModifiers::CONTROL) => {}
+            KeyCode::Char(c) => s.url_input.push(c),
+            KeyCode::Backspace => {
+                s.url_input.pop();
+            }
+            KeyCode::Esc => return Ok(true),
+            KeyCode::Enter => {
+                let url = s.url_input.clone();
+                s.mode = AppMode::Searching;
+                s.status_message = "Parsing URL...".to_string();
 
-                    let state_c = state.clone();
-                    let client_c = client.clone();
+                let state_c = state.clone();
+                let client_c = client.clone();
 
-                    tokio::spawn(async move {
-                        match GitHubUrl::parse(&url) {
-                            Ok(mut gh_url) => {
-                                {
+                tokio::spawn(async move {
+                    match GitHubUrl::parse(&url) {
+                        Ok(mut gh_url) => {
+                            {
+                                let mut s = state_c.lock().await;
+                                s.status_message = "Fetching contents...".to_string();
+                            }
+
+                            match client_c.fetch_contents(&gh_url.api_url()).await {
+                                Ok(mut items) => {
+                                    {
+                                        let mut s = state_c.lock().await;
+                                        s.status_message = "Resolving LFS files...".to_string();
+                                    }
+                                    client_c
+                                        .resolve_lfs_files(
+                                            &mut items,
+                                            &gh_url.owner,
+                                            &gh_url.repo,
+                                            &gh_url.branch,
+                                        )
+                                        .await;
+
                                     let mut s = state_c.lock().await;
-                                    s.status_message = "Fetching contents...".to_string();
+                                    s.items = items;
+                                    s.current_url = Some(gh_url);
+                                    s.mode = AppMode::Browse;
+                                    s.status_message = String::new();
+                                    s.show_toast(
+                                        "Repository Loaded!".to_string(),
+                                        ToastType::Success,
+                                    );
                                 }
-
-                                match client_c.fetch_contents(&gh_url.api_url()).await {
-                                    Ok(mut items) => {
+                                Err(e) => {
+                                    let err_str = format!("{}", e);
+                                    if gh_url.branch == "main" && err_str.contains("not found") {
+                                        gh_url.branch = "master".to_string();
                                         {
                                             let mut s = state_c.lock().await;
-                                            s.status_message = "Resolving LFS files...".to_string();
+                                            s.status_message =
+                                                "Trying master branch...".to_string();
                                         }
-                                        client_c
-                                            .resolve_lfs_files(
-                                                &mut items,
-                                                &gh_url.owner,
-                                                &gh_url.repo,
-                                                &gh_url.branch,
-                                            )
-                                            .await;
+                                        match client_c.fetch_contents(&gh_url.api_url()).await {
+                                            Ok(mut items) => {
+                                                {
+                                                    let mut s = state_c.lock().await;
+                                                    s.status_message =
+                                                        "Resolving LFS files...".to_string();
+                                                }
+                                                client_c
+                                                    .resolve_lfs_files(
+                                                        &mut items,
+                                                        &gh_url.owner,
+                                                        &gh_url.repo,
+                                                        &gh_url.branch,
+                                                    )
+                                                    .await;
 
-                                        let mut s = state_c.lock().await;
-                                        s.items = items;
-                                        s.current_url = Some(gh_url);
-                                        s.mode = AppMode::Browse;
-                                        s.status_message = String::new();
-                                        s.show_toast(
-                                            "Repository Loaded!".to_string(),
-                                            ToastType::Success,
-                                        );
-                                    }
-                                    Err(e) => {
-                                        let err_str = format!("{}", e);
-                                        if gh_url.branch == "main" && err_str.contains("not found") {
-                                            gh_url.branch = "master".to_string();
-                                            {
                                                 let mut s = state_c.lock().await;
-                                                s.status_message =
-                                                    "Trying master branch...".to_string();
+                                                s.items = items;
+                                                s.current_url = Some(gh_url);
+                                                s.mode = AppMode::Browse;
+                                                s.status_message = String::new();
+                                                s.show_toast(
+                                                    "Repository Loaded!".to_string(),
+                                                    ToastType::Success,
+                                                );
                                             }
-                                            match client_c.fetch_contents(&gh_url.api_url()).await {
-                                                Ok(mut items) => {
-                                                    {
-                                                        let mut s = state_c.lock().await;
-                                                        s.status_message =
-                                                            "Resolving LFS files...".to_string();
-                                                    }
-                                                    client_c
-                                                        .resolve_lfs_files(
-                                                            &mut items,
-                                                            &gh_url.owner,
-                                                            &gh_url.repo,
-                                                            &gh_url.branch,
-                                                        )
-                                                        .await;
-
-                                                    let mut s = state_c.lock().await;
-                                                    s.items = items;
-                                                    s.current_url = Some(gh_url);
-                                                    s.mode = AppMode::Browse;
-                                                    s.status_message = String::new();
-                                                    s.show_toast(
-                                                        "Repository Loaded!".to_string(),
-                                                        ToastType::Success,
-                                                    );
-                                                }
-                                                Err(e2) => {
-                                                    let mut s = state_c.lock().await;
-                                                    s.mode = AppMode::Input;
-                                                    s.show_toast(
-                                                        format!("Error: {}", e2),
-                                                        ToastType::Error,
-                                                    );
-                                                }
+                                            Err(e2) => {
+                                                let mut s = state_c.lock().await;
+                                                s.mode = AppMode::Input;
+                                                s.show_toast(
+                                                    format!("Error: {}", e2),
+                                                    ToastType::Error,
+                                                );
                                             }
-                                        } else {
-                                            let mut s = state_c.lock().await;
-                                            s.mode = AppMode::Input;
-                                            s.show_toast(format!("Error: {}", e), ToastType::Error);
                                         }
+                                    } else {
+                                        let mut s = state_c.lock().await;
+                                        s.mode = AppMode::Input;
+                                        s.show_toast(format!("Error: {}", e), ToastType::Error);
                                     }
                                 }
                             }
-                            Err(e) => {
-                                let mut s = state_c.lock().await;
-                                s.mode = AppMode::Input;
-                                s.show_toast(format!("Invalid URL: {}", e), ToastType::Error);
-                            }
                         }
-                    });
-                }
-                _ => {}
+                        Err(e) => {
+                            let mut s = state_c.lock().await;
+                            s.mode = AppMode::Input;
+                            s.show_toast(format!("Invalid URL: {}", e), ToastType::Error);
+                        }
+                    }
+                });
             }
-        }
+            _ => {}
+        },
         AppMode::Searching => {
             if key.code == KeyCode::Esc {
                 s.mode = AppMode::Input;

@@ -40,10 +40,10 @@ fn test_searching_mode() {
     use ghgrab::ui::AppMode;
     let mut state = AppState::new();
     assert_eq!(state.mode, AppMode::Input);
-    
+
     state.mode = AppMode::Searching;
     assert_eq!(state.mode, AppMode::Searching);
-    
+
     assert_eq!(state.frame_count, 0);
     state.frame_count += 1;
     assert_eq!(state.frame_count, 1);
