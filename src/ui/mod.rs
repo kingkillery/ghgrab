@@ -24,7 +24,7 @@ fn install_panic_hook() {
     }));
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum AppMode {
     Input,
     Searching,
