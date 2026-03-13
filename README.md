@@ -52,19 +52,23 @@ Or, if you already have a link, just paste it in:
 ghgrab https://github.com/rust-lang/rust
 ```
 
-### GitHub Token (Private Repos & Rate Limits)
+### Configuration
 
-GitHub limits how many requests you can make without a token and hides private repositories. To download from **private repositories** or increase your search rate limits, it's highly recommended to set a Personal Access Token:
+To manage your settings:
 
 ```bash
 # Set your token
-ghgrab config set --token YOUR_TOKEN
+ghgrab config set token YOUR_TOKEN
 
-# View masked token
+# Set a custom download folder
+ghgrab config set path "/your/custom/path"
+
+# View your current settings (token is masked)
 ghgrab config list
 
-# Remove token
-ghgrab config unset
+# Remove settings
+ghgrab config unset token
+ghgrab config unset path
 ```
 
 ### Keyboard Shortcuts (How to move around)

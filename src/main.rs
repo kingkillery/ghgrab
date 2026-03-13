@@ -16,20 +16,37 @@ struct Cli {
 enum Commands {
     Config {
         #[command(subcommand)]
-        action: ConfigAction,
+        action: ConfigCommand,
     },
 }
 
 #[derive(Subcommand)]
-enum ConfigAction {
+enum ConfigCommand {
     Set {
-        #[arg(long)]
-        token: String,
+        #[command(subcommand)]
+        target: SetTarget,
     },
 
-    Unset,
+    Unset {
+        #[command(subcommand)]
+        target: UnsetTarget,
+    },
 
     List,
+}
+
+#[derive(Subcommand)]
+enum SetTarget {
+    Token { value: String },
+
+    Path { value: String },
+}
+
+#[derive(Subcommand)]
+enum UnsetTarget {
+    Token,
+
+    Path,
 }
 
 #[tokio::main]
@@ -38,19 +55,39 @@ async fn main() -> Result<()> {
 
     match cli.command {
         Some(Commands::Config { action }) => match action {
-            ConfigAction::Set { token } => {
-                let mut config = Config::load()?;
-                config.github_token = Some(token);
-                config.save()?;
-                println!("✅ GitHub token saved successfully!");
-            }
-            ConfigAction::Unset => {
-                let mut config = Config::load()?;
-                config.github_token = None;
-                config.save()?;
-                println!("✅ GitHub token removed successfully!");
-            }
-            ConfigAction::List => {
+            ConfigCommand::Set { target } => match target {
+                SetTarget::Token { value } => {
+                    let mut config = Config::load()?;
+                    config.github_token = Some(value);
+                    config.save()?;
+                    println!("✅ GitHub token saved successfully!");
+                }
+                SetTarget::Path { value } => {
+                    if let Err(e) = Config::validate_path(&value) {
+                        eprintln!("❌ Invalid path: {}", e);
+                    } else {
+                        let mut config = Config::load()?;
+                        config.download_path = Some(value);
+                        config.save()?;
+                        println!("✅ Download path saved successfully!");
+                    }
+                }
+            },
+            ConfigCommand::Unset { target } => match target {
+                UnsetTarget::Token => {
+                    let mut config = Config::load()?;
+                    config.github_token = None;
+                    config.save()?;
+                    println!("✅ GitHub token removed successfully!");
+                }
+                UnsetTarget::Path => {
+                    let mut config = Config::load()?;
+                    config.download_path = None;
+                    config.save()?;
+                    println!("✅ Download path removed successfully!");
+                }
+            },
+            ConfigCommand::List => {
                 let config = Config::load().unwrap_or_default();
                 if let Some(token) = &config.github_token {
                     let masked = if token.len() > 8 {
@@ -58,15 +95,21 @@ async fn main() -> Result<()> {
                     } else {
                         "********".to_string()
                     };
-                    println!("GitHub Token: {}", masked);
+                    println!("GitHub Token:  {}", masked);
                 } else {
-                    println!("GitHub Token: Not set");
+                    println!("GitHub Token:  Not set");
+                }
+
+                if let Some(path) = &config.download_path {
+                    println!("Download Path: {}", path);
+                } else {
+                    println!("Download Path: Not set (using default Downloads folder)");
                 }
             }
         },
         None => {
             let config = Config::load().unwrap_or_default();
-            ui::run_tui(cli.url, config.github_token).await?;
+            ui::run_tui(cli.url, config.github_token, config.download_path).await?;
         }
     }
 

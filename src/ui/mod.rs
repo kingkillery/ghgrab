@@ -46,6 +46,7 @@ pub struct AppState {
     pub toast: Option<Toast>,
     pub ascii_mode: bool,
     pub github_token: Option<String>,
+    pub download_path: Option<String>,
     pub full_tree: Option<Vec<RepoItem>>,
     pub folder_sizes: HashMap<String, u64>,
 }
@@ -72,6 +73,7 @@ impl AppState {
             toast: None,
             ascii_mode: false,
             github_token: None,
+            download_path: None,
             full_tree: None,
             folder_sizes: HashMap::new(),
         }
@@ -133,7 +135,11 @@ impl AppState {
     }
 }
 
-pub async fn run_tui(initial_url: Option<String>, token: Option<String>) -> Result<()> {
+pub async fn run_tui(
+    initial_url: Option<String>,
+    token: Option<String>,
+    download_path: Option<String>,
+) -> Result<()> {
     install_panic_hook();
     enable_raw_mode().context("Failed to enable raw mode")?;
     let mut stdout = io::stdout();
@@ -145,6 +151,7 @@ pub async fn run_tui(initial_url: Option<String>, token: Option<String>) -> Resu
     let client = GitHubClient::new(token.clone())?;
     let mut state_init = AppState::new();
     state_init.github_token = token;
+    state_init.download_path = download_path;
     let has_initial_url = initial_url.is_some();
 
     if let Some(url) = initial_url {
@@ -609,7 +616,7 @@ async fn load_repo(state: Arc<Mutex<AppState>>, client: GitHubClient, mut gh_url
 
 async fn perform_download(state: Arc<Mutex<AppState>>) -> Result<()> {
     use crate::download::Downloader;
-    let (items_to_download, _repo_path, repo_name, token) = {
+    let (items_to_download, _repo_path, repo_name, token, custom_path) = {
         let s = state.lock().await;
         if let Some(url) = &s.current_url {
             let selected = s.get_selected_items();
@@ -628,6 +635,7 @@ async fn perform_download(state: Arc<Mutex<AppState>>) -> Result<()> {
                         for tree_item in full_tree {
                             if tree_item.path.starts_with(&prefix) && tree_item.is_file() {
                                 let mut file_item = tree_item.clone();
+                                // Preserve relative path from the selection's parent
                                 file_item.name = tree_item.path[prefix_len..].to_string();
                                 file_item.selected = true;
                                 final_items.push(file_item);
@@ -646,16 +654,21 @@ async fn perform_download(state: Arc<Mutex<AppState>>) -> Result<()> {
                 format!("{}/{}", url.owner, url.repo),
                 url.repo.clone(),
                 s.github_token.clone(),
+                s.download_path.clone(),
             )
         } else {
             return Ok(());
         }
     };
 
-    let download_dir = dirs::download_dir()
-        .or_else(|| dirs::home_dir().map(|h| h.join("Downloads")))
-        .context("Could not find User Downloads directory")?
-        .join(repo_name);
+    let download_dir = if let Some(path) = custom_path {
+        std::path::PathBuf::from(path).join(repo_name)
+    } else {
+        dirs::download_dir()
+            .or_else(|| dirs::home_dir().map(|h| h.join("Downloads")))
+            .context("Could not find User Downloads directory")?
+            .join(repo_name)
+    };
 
     let downloader = Downloader::new(download_dir.clone(), token)?;
     let state_c = state.clone();

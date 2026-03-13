@@ -6,9 +6,27 @@ use std::path::PathBuf;
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Config {
     pub github_token: Option<String>,
+    pub download_path: Option<String>,
 }
 
 impl Config {
+    pub fn validate_path(path: &str) -> Result<()> {
+        let p = PathBuf::from(path);
+        if !p.exists() {
+            return Err(anyhow::anyhow!("Path does not exist: {}", path));
+        }
+        if !p.is_dir() {
+            return Err(anyhow::anyhow!("Path is not a directory: {}", path));
+        }
+
+        let metadata = fs::metadata(&p).context("Failed to get metadata for path")?;
+        if metadata.permissions().readonly() {
+            return Err(anyhow::anyhow!("Path is read-only: {}", path));
+        }
+
+        Ok(())
+    }
+
     pub fn load() -> Result<Self> {
         let config_path = get_config_path()?;
         if !config_path.exists() {
