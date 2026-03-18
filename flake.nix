@@ -1,8 +1,10 @@
+# flake.nix
 {
   description = "A simple, pretty terminal tool to search and download files from GitHub";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    rust-overlay.url = "github:oxalica/rust-overlay";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -10,35 +12,36 @@
     {
       self,
       nixpkgs,
+      rust-overlay,
       flake-utils,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ rust-overlay.overlays.default ];
+        };
+
+        rustToolchain = pkgs.rust-bin.stable.latest.default;
+
+        rustPlatform = pkgs.makeRustPlatform {
+          cargo = rustToolchain;
+          rustc = rustToolchain;
+        };
       in
       {
-        packages.default = pkgs.rustPlatform.buildRustPackage rec {
+        packages.default = rustPlatform.buildRustPackage {
           pname = "ghgrab";
-          version = "1.0.1";
+          version = "1.0.2";
 
-          src = pkgs.fetchFromGitHub {
-            owner = "abhixdd";
-            repo = "ghgrab";
-            rev = "v${version}";
-            sha256 = "sha256-hcQU00DjcnHrlie8qsIvvtsyiyuqD9dSiWu1c0mv6fs=";
-          };
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
+        };
 
-          cargoHash = "sha256-SGcbdpcvK9F3q4x+bMwGdLARMg3ResqS8k0ToMfSBAw=";
-
-          nativeBuildInputs = [ pkgs.pkg-config ];
-
-          buildInputs = [
-            pkgs.openssl
-          ];
-
-          doCheck = false;
+        devShells.default = pkgs.mkShell {
+          buildInputs = [ rustToolchain ];
         };
       }
     );

@@ -36,6 +36,17 @@ cargo install ghgrab
 pipx install ghgrab
 ```
 
+### Nix 
+To have the latest commit:
+``` bash
+nix build github:ghgrab/ghgrab
+```
+
+To have a specific tagged version:
+``` bash
+nix build "github:ghgrab/ghgrab/<tag>"
+```
+
 ---
 
 ### Quick Start
@@ -116,4 +127,3 @@ If you find a bug, have an idea for a cool new feature, or just want to help out
 ## License
 
 Distributed under the MIT License. It's open, free, and yours to play with. See [LICENSE](LICENSE) for the fine print.
-
