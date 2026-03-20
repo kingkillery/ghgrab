@@ -46,7 +46,7 @@ pub fn render(f: &mut Frame, area: Rect, mut state: PreviewState) {
         f.render_widget(loading_text, vertical_center);
     } else if let Some(img) = state.image {
         if let Some(ref mut picker) = state.picker {
-            let resize = ratatui_image::Resize::Fit(None);
+            let resize = ratatui_image::Resize::Fit;
             if let Ok(protocol) = picker.new_protocol(img.clone(), inner_area, resize) {
                 let image_widget = ratatui_image::Image::new(protocol.as_ref());
                 f.render_widget(image_widget, inner_area);

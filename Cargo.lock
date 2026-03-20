@@ -495,7 +495,7 @@ dependencies = [
 
 [[package]]
 name = "ghgrab"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "anyhow",
  "clap",
@@ -1153,9 +1153,9 @@ dependencies = [
 
 [[package]]
 name = "ratatui-image"
-version = "0.9.0"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b67304920fc88dfba42fe4008de8aa34c9190f0128544b273f4a2854e67c370"
+checksum = "13d6f51e76d47bc941360aded4b86c81e3e48c76596ac81e6afdc62eedaf5abf"
 dependencies = [
  "base64",
  "dyn-clone",
