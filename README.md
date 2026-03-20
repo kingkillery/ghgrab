@@ -14,7 +14,7 @@
 - **Easy on the eyes**: A clean terminal interface that makes browsing feel smooth.
 - **Works where you are**: Installs quickly via NPM, Cargo, or PIP.
 - **Find things fast**: Quickly search and navigate through any repo's folders with fuzzy search.
-- **File Preview**: Preview any file—including source code, images, and GIFs—directly in the TUI.
+- **File Preview**: Preview any file; including source code, images, and GIFs directly in the TUI.
 - **Handles the big stuff**: Built-in support for GitHub LFS (Large File Storage).
 - **Batch mode**: Select a bunch of files and folders to download them all at once.
 
