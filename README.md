@@ -76,6 +76,32 @@ ghgrab https://github.com/rust-lang/rust --cwd --no-folder
 | `--no-folder` | Downloads files directly without creating a subfolder for the repo. |
 | `--token <TOKEN>`| Use a specific GitHub token for this run (doesn't save to settings). |
 
+### Agent Mode
+
+For scripts, agents, and other non-interactive workflows, `ghgrab` includes a machine-friendly `agent` command that prints a stable JSON envelope with `api_version`, `ok`, `command`, and either `data` or `error`.
+
+```bash
+# Fetch the repository tree as JSON
+ghgrab agent tree https://github.com/rust-lang/rust
+
+# Fetch the repository tree with an explicit token for scripts or agents
+ghgrab agent tree https://github.com/rust-lang/rust --token YOUR_TOKEN
+
+# Download specific paths from a repository
+ghgrab agent download https://github.com/rust-lang/rust src/tools README.md --out ./tmp
+
+# Download an explicit subtree
+ghgrab agent download https://github.com/rust-lang/rust --subtree src/tools --out ./tmp
+
+# Download the entire repository
+ghgrab agent download https://github.com/rust-lang/rust --repo --out ./tmp
+
+# Download into the current working directory without creating a repo folder
+ghgrab agent download https://github.com/rust-lang/rust src/tools --cwd --no-folder
+```
+
+You can pass `--token <TOKEN>` to `agent tree` and `agent download` when an external tool, CI job, or coding agent should authenticate without relying on saved local config.
+
 ### Configuration
 
 To manage your settings:
