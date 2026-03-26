@@ -1,7 +1,7 @@
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Modifier, Style},
-    text::{Line, Span},
+    text::{Line, Span, Text},
     widgets::{Block, Borders, Clear, Paragraph, Wrap},
     Frame,
 };
@@ -10,6 +10,7 @@ use crate::ui::theme::*;
 
 pub struct PreviewState<'a> {
     pub content: &'a str,
+    pub text: Option<Text<'static>>,
     pub path: &'a str,
     pub loading: bool,
     pub is_image: bool,
@@ -77,9 +78,10 @@ pub fn render(f: &mut Frame, area: Rect, state: PreviewState) {
             .constraints([Constraint::Min(1), Constraint::Length(1)])
             .split(inner_area);
 
-        let paragraph = Paragraph::new(content)
-            .style(Style::default().fg(FG_COLOR))
-            .wrap(Wrap { trim: false });
+        let preview_text = state
+            .text
+            .unwrap_or_else(|| Text::from(content.to_string()));
+        let paragraph = Paragraph::new(preview_text).wrap(Wrap { trim: false });
 
         f.render_widget(paragraph, chunks[0]);
 
