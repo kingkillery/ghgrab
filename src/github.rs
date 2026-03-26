@@ -244,7 +244,7 @@ pub struct GitHubClient {
 impl GitHubClient {
     pub fn new(token: Option<String>) -> Result<Self> {
         let client = reqwest::Client::builder()
-            .user_agent("ghgrab/1.1.0")
+            .user_agent("ghgrab/1.2.0")
             .build()
             .context("Failed to create HTTP client")?;
         Ok(GitHubClient { client, token })
