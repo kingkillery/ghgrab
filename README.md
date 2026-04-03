@@ -18,6 +18,7 @@
 - **File Preview**: Preview source code and text files directly in the TUI.
 - **Handles the big stuff**: Built-in support for GitHub LFS (Large File Storage).
 - **Batch mode**: Select a bunch of files and folders to download them all at once.
+- **Release downloads**: Grab GitHub release artifacts with OS/architecture-aware selection.
 
 ---
 
@@ -91,6 +92,111 @@ You can also type a repository keyword on the home screen (for example `ratatui`
 | `--cwd`           | Forces download to the current working directory.                    |
 | `--no-folder`     | Downloads files directly without creating a subfolder for the repo.  |
 | `--token <TOKEN>` | Use a specific GitHub token for this run (doesn't save to settings). |
+
+### Release Downloads
+
+You can also download GitHub release assets directly with the user-facing `release` command or its short alias `rel`.
+
+Basic examples:
+
+```bash
+# Download the best matching artifact for your OS and architecture
+ghgrab rel sharkdp/bat
+
+# Extract an archive after download
+ghgrab rel sharkdp/bat --extract
+
+# Download a specific release tag
+ghgrab rel sharkdp/bat --tag v0.25.0
+
+# Match a specific asset by regex
+ghgrab rel sharkdp/bat --asset-regex "x86_64.*windows.*zip"
+
+# Download into a custom directory
+ghgrab rel sharkdp/bat --extract --out ./tmp/bat
+
+# Install the selected file or extracted binary into a target directory
+ghgrab rel sharkdp/bat --extract --bin-path ~/.local/bin
+```
+
+Basic release flags:
+
+| Flag | Description |
+| ---- | ----------- |
+| `--tag <TAG>` | Download a specific release tag. |
+| `--asset-regex <REGEX>` | Match a specific release asset by regex. |
+| `--extract` | Extract archive assets after download. |
+| `--out <DIR>` | Download into a custom output directory. |
+| `--bin-path <DIR>` | Copy the selected file or extracted binary into the provided directory. |
+| `--os <OS>` | Override detected operating system. |
+| `--arch <ARCH>` | Override detected architecture. |
+
+<details>
+<summary>Show release download usage, flags, and examples</summary>
+
+How selection works:
+
+- If there is one clear best asset match for your OS and architecture, ghgrab downloads it directly.
+- If multiple close matches exist, ghgrab shows an interactive picker in the terminal.
+- Type the asset number and press `Enter` to continue.
+- Type `q` and press `Enter` to cancel the picker.
+
+```bash
+# Pick a release tag explicitly
+ghgrab rel sharkdp/bat --tag v0.25.0
+
+# Match assets with a regex
+ghgrab rel sharkdp/bat --asset-regex "x86_64.*linux.*tar.gz"
+
+# Extract an archive after download
+ghgrab rel sharkdp/bat --extract
+
+# Install the selected file or extracted binary into a target directory
+ghgrab rel sharkdp/bat --extract --bin-path ~/.local/bin
+
+# Download to a custom directory
+ghgrab rel sharkdp/bat --extract --out ./tmp/bat
+
+# Force Windows x64 asset selection
+ghgrab rel BurntSushi/ripgrep --os windows --arch amd64
+
+# Allow prereleases when selecting the latest release
+ghgrab rel starship/starship --prerelease
+```
+
+### Release Flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--tag <TAG>` | Download a specific release tag instead of the latest matching release. |
+| `--prerelease` | Allow prereleases when `--tag` is not provided. |
+| `--asset-regex <REGEX>` | Match a specific release asset by regex. Useful for forcing one artifact and skipping the picker. |
+| `--os <OS>` | Override detected operating system for asset selection. |
+| `--arch <ARCH>` | Override detected architecture for asset selection. |
+| `--file-type <TYPE>` | Prefer `any`, `archive`, or `binary` assets. |
+| `--extract` | Extract archive assets after download. Supports `.zip`, `.tar.gz`, `.tgz`, and `.tar.xz`. |
+| `--out <DIR>` | Download into a custom output directory. |
+| `--bin-path <DIR>` | Copy the selected file or extracted binary into the provided directory. |
+| `--cwd` | Download into the current working directory. |
+| `--token <TOKEN>` | Use a one-time GitHub token for this run without saving it. |
+
+### Release Examples
+
+```bash
+# Download a specific ripgrep release for Windows x64
+ghgrab rel BurntSushi/ripgrep --tag 15.1.0 --os windows --arch amd64
+
+# Use a regex to choose one exact asset
+ghgrab rel sharkdp/bat --asset-regex "x86_64.*windows.*zip"
+
+# Install an extracted binary into your local bin directory
+ghgrab rel sharkdp/bat --extract --bin-path ~/.local/bin
+
+# Use the long command form
+ghgrab release sharkdp/bat
+```
+
+</details>
 
 ### Environment Variables
 
