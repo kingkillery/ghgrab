@@ -9,7 +9,7 @@ from pathlib import Path
 import hashlib
 import json
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 
 def get_platform_info():
     system = platform.system().lower()
