@@ -502,7 +502,7 @@ async fn event_loop(
                 state_lock.terminal_height = size.height;
                 f.render_widget(
                     ratatui::widgets::Block::default()
-                        .style(ratatui::style::Style::default().bg(theme::BG_COLOR)),
+                        .style(ratatui::style::Style::default().bg(theme::BG_COLOR())),
                     size,
                 );
 
