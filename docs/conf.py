@@ -25,7 +25,7 @@ source_suffix = {
 root_doc = "index"
 
 html_theme = "qiskit-ecosystem"
-html_title = "ghgrab - grab anything you want"
+html_title = f"GhGrab - v{release}"
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 
